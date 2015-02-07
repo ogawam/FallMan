@@ -144,6 +144,8 @@ public class UnitBase : MonoBehaviour {
 				speed.y = Mathf.Min(speed.y, 0);
 			}
 		}
+
+//		Debug.Break();
 	}
 
 	void OnTriggerEnter2D(Collider2D other) {
@@ -173,8 +175,8 @@ public class UnitBase : MonoBehaviour {
 
 		for(int i = 0; i < repeat; ++i) {
 			RaycastHit2D result = Physics2D.BoxCast(
-				prevBodyPos, bodySize, 0, nextVec, nextVec.magnitude + 8, 
-				Physics2D.AllLayers//LayerMask.NameToLayer("Default")
+				prevBodyPos, bodySize, 0, nextVec, nextVec.magnitude + 1, 
+				1 << LayerMask.NameToLayer("Default")
 			);
 			if(result.collider != null) {
 				colliderResult.hits.Add(result);
@@ -182,8 +184,8 @@ public class UnitBase : MonoBehaviour {
 				Vector3 bodyPos = nextBodyPos;
 
 				if(Mathf.Abs(result.normal.x) > Mathf.Abs(result.normal.y))
-					nextBodyPos.x = result.point.x + (result.normal.x > 0 ? 1:-1) * (bodySize.x / 2 + 8);
-				else nextBodyPos.y = result.point.y + (result.normal.y > 0 ? 1:-1) * (bodySize.y / 2 + 8);
+					nextBodyPos.x = result.point.x + (result.normal.x > 0 ? 1:-1) * (bodySize.x / 2 + 1);
+				else nextBodyPos.y = result.point.y + (result.normal.y > 0 ? 1:-1) * (bodySize.y / 2 + 1);
 
 				Debug.DrawLine(bodyPos, nextBodyPos, Color.gray);
 				Debug.DrawLine(prevRootPos, result.point, Color.cyan);

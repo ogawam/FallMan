@@ -99,7 +99,6 @@ public class UnitBase : MonoBehaviour {
 		}
 
 		if(speed.magnitude > 1) {
-#if true
 			Vector3 nextVec = speed * 60 * Time.deltaTime;
 			ColliderResult result = CalcCollidedPosition(prevPos, nextVec, 3);
 			transform.position = result.pos;
@@ -112,48 +111,6 @@ public class UnitBase : MonoBehaviour {
 					speed.y = Mathf.Min(speed.y, 0);
 				}
 			}
-#else
-			Vector3 nextVec = speed * 60 * Time.deltaTime;
-			nextPos = prevPos + nextVec;
-			Debug.DrawRay(prevPos, nextVec, Color.yellow);
-
-			Vector2 bodyPos = GetBodyPos();
-			Vector2 bodyVec = objBase.Box2D.size;
-			Vector2 nextBodyPos = bodyPos + nextVec;
-
-			for(int i = 0; i < 3; ++i) {
-				RaycastHit2D result = Physics2D.BoxCast(bodyPos, bodyVec, 0, nextVec, nextVec.magnitude + 8);
-				if(result.collider != null) {
-					Debug.DrawRay(result.point, result.normal * result.distance, Color.red);
-/*
-					string buffer = "result";
-					buffer += "\n point "+ result.point;
-					buffer += "\n normal "+ result.normal;
-					buffer += "\n fraction "+ result.fraction;
-					buffer += "\n distance "+ result.distance;
-					buffer += "\n centroid "+ result.centroid;
-					Debug.Log(buffer);
-*/
-					if(Mathf.Abs(result.normal.x) > Mathf.Abs(result.normal.y))
-						nextBodyPos.x = result.point.x + (result.normal.x > 0 ? 1:-1) * (bodyVec.x / 2 + 8);
-					else nextBodyPos.y = result.point.y + (result.normal.y > 0 ? 1:-1) * (bodyVec.y / 2 + 8);
-
-					if(result.normal.y > 0.75f) {
-						stand = true;
-						speed.y = 0;
-					}
-					else if(result.normal.y < -0.5f) {
-						speed.y = Mathf.Min(speed.y, 0);
-					}
-					nextVec = nextBodyPos - bodyPos;
-					nextBodyPos = bodyPos + nextVec;
-				}
-				else break;
-			}
-			nextPos = nextBodyPos - GetBodyOffset();
-
-			Debug.DrawRay(prevPos, nextVec * 10);
-#endif
 		}
 
 		if(Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButton(2) || Input.touchCount > 2)
@@ -176,7 +133,6 @@ public class UnitBase : MonoBehaviour {
 
 		Debug.Log("hit "+ other.name + " vec "+ vec+ " dist "+ vec.magnitude);
 
-#if true
 		ColliderResult result = CalcCollidedPosition(pos, vec, 3);
 		transform.position = result.pos;
 		foreach(RaycastHit2D hit in result.hits) {
@@ -188,32 +144,6 @@ public class UnitBase : MonoBehaviour {
 				speed.y = Mathf.Min(speed.y, 0);
 			}
 		}
-//		Debug.Break();
-#else
-		RaycastHit2D result = Physics2D.BoxCast(pos, objBase.Box2D.size, 0, vec, vec.magnitude + 8);
-		if(result.collider != null) {
-			Debug.DrawLine(result.centroid, boxPos, Color.red);
-			bodyPos = result.centroid;// + result.normal * 8;
-/*
-			if(Mathf.Abs(result.normal.x) > Mathf.Abs(result.normal.y))
-				nextBodyPos.x = result.point.x + (result.normal.x > 0 ? 1:-1) * (bodyVec.x / 2 + 8);
-			else nextBodyPos.y = result.point.y + (result.normal.y > 0 ? 1:-1) * (bodyVec.y / 2 + 8);
-
-			if(result.normal.y > 0.75f) {
-				stand = true;
-				speed.y = 0;
-			}
-			else if(result.normal.y < -0.5f) {
-				speed.y = Mathf.Min(speed.y, 0);
-			}
-			nextVec = nextBodyPos - bodyPos;
-			nextBodyPos = bodyPos + nextVec;
-*/
-			Vector3 offset = GetBodyOffset();
-			transform.position = bodyPos - offset;
-		}
-//		Debug.Break();
-#endif
 	}
 
 	void OnTriggerEnter2D(Collider2D other) {

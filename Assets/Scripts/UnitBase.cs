@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-public class UnitBase : MonoBehaviour {
+public class UnitBase : ObjectBase {
 
 	public float accel_move;
 	public float accel_stop;
@@ -13,16 +13,10 @@ public class UnitBase : MonoBehaviour {
 
 	public Vector2 speed_max;
 
-	ObjectBase objBase;
-
 	[SerializeField] ObjectBase objGuide;
 
 
 	// Use this for initialization
-	void Start () {
-		objBase = GetComponent<ObjectBase>();	
-	}
-	
 	Vector2 speed = Vector2.zero;
 
 	public void InputMoveLeft() {
@@ -43,11 +37,11 @@ public class UnitBase : MonoBehaviour {
 	bool stand = false;
 
 	// Update is called once per frame
-	void Update () {
+	protected override void Update_ () {
 		speed.x = Mathf.Clamp(speed.x, -speed_max.x, speed_max.x);
 		speed.y = Mathf.Clamp(speed.y, -speed_max.y, speed_max.y);
 
-		objBase.GetUIObject().transform.localScale = new Vector3(speed.x < 0 ? -1 : 1,1,1);
+		uiObject.transform.localScale = new Vector3(speed.x < 0 ? -1 : 1,1,1);
 
 		float touchVec = 0;
 #if UNITY_EDITOR
@@ -87,8 +81,7 @@ public class UnitBase : MonoBehaviour {
 
 		Vector2 grvVec = Physics2D.gravity.normalized;
 
-		Vector2 prevPos = transform.position;
-		Vector2 nextPos = prevPos;
+		Vector3 prevPos = transform.position;
 
 		if(false) { // stand) {
 			RaycastHit2D result = Physics2D.Raycast(prevPos, grvVec, 64);
@@ -112,48 +105,44 @@ public class UnitBase : MonoBehaviour {
 				}
 			}
 		}
-
-		if(Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButton(2) || Input.touchCount > 2)
-			transform.position = Vector3.zero;
 	}
 
-	void CheckCollider(Collider2D other) {
+	void OnTriggerEnter2D(Collider2D hit2D) {
+		OnCollider2D(hit2D);
+	}
 
-		BoxCollider2D box = other as BoxCollider2D;
-		Vector3 boxPos = box.bounds.center;
-		Vector3 bodyPos = GetBodyPos();
-		Vector3 vec = bodyPos - boxPos;
-		Debug.DrawRay(boxPos, vec, Color.green);
+	void OnTriggerStay2D(Collider2D hit2D) {
+		OnCollider2D(hit2D);
+	}
 
-		vec = vec.normalized * (((box.size.magnitude + objBase.Box2D.size.magnitude) * 0.5f) - vec.magnitude);
-		Vector3 pos = bodyPos + vec;
-		vec = transform.position - pos;
+	void OnCollider2D(Collider2D hit2D) {
+		BoxCollider2D hitBox2D = hit2D as BoxCollider2D;
+		if(hitBox2D != null) {
+			Vector3 boxPos = hitBox2D.bounds.center;
+			Vector3 bodyPos = GetBodyPos();
+			Vector3 vec = bodyPos - boxPos;
+			Debug.DrawRay(boxPos, vec, Color.green);
 
-		Debug.DrawRay(pos, vec, Color.yellow);
+			vec = vec.normalized * (((hitBox2D.size.magnitude + box2D.size.magnitude) * 0.5f) - vec.magnitude);
+			Vector3 pos = bodyPos + vec;
+			vec = transform.position - pos;
 
-		Debug.Log("hit "+ other.name + " vec "+ vec+ " dist "+ vec.magnitude);
+			Debug.DrawRay(pos, vec, Color.yellow);
 
-		ColliderResult result = CalcCollidedPosition(pos, vec, 3);
-		transform.position = result.pos;
-		foreach(RaycastHit2D hit in result.hits) {
-			if(hit.normal.y > 0.75f) {
-				stand = true;
-				speed.y = 0;
-			}
-			else if(hit.normal.y < -0.5f) {
-				speed.y = Mathf.Min(speed.y, 0);
+			Debug.Log("hit "+ hit2D.name + " vec "+ vec+ " dist "+ vec.magnitude);
+
+			ColliderResult result = CalcCollidedPosition(pos, vec, 3);
+			transform.position = result.pos;
+			foreach(RaycastHit2D hit in result.hits) {
+				if(hit.normal.y > 0.75f) {
+					stand = true;
+					speed.y = 0;
+				}
+				else if(hit.normal.y < -0.5f) {
+					speed.y = Mathf.Min(speed.y, 0);
+				}
 			}
 		}
-
-//		Debug.Break();
-	}
-
-	void OnTriggerEnter2D(Collider2D other) {
-		CheckCollider(other);
-	}
-
-	void OnTriggerStay2D(Collider2D other) {
-		CheckCollider(other);
 	}
 
 	class ColliderResult {
@@ -166,16 +155,15 @@ public class UnitBase : MonoBehaviour {
 		Vector3 prevRootPos, Vector3 nextVec, int repeat = 1) 
 	{
 		ColliderResult colliderResult = new ColliderResult();
-		Vector3 nextRootPos = prevRootPos + nextVec;
 		Debug.DrawRay(prevRootPos, nextVec, Color.yellow);
 
-		Vector3 bodySize = objBase.Box2D.size;
+		Vector3 bodySize = (collider2D as BoxCollider2D).size;
 		Vector3 prevBodyPos = prevRootPos + GetBodyOffset();
 		Vector3 nextBodyPos = prevBodyPos + nextVec;
 
 		for(int i = 0; i < repeat; ++i) {
 			RaycastHit2D result = Physics2D.BoxCast(
-				prevBodyPos, bodySize, 0, nextVec, nextVec.magnitude + 1, 
+				prevBodyPos, bodySize, 0, nextVec, nextVec.magnitude + 2, 
 				1 << LayerMask.NameToLayer("Default")
 			);
 			if(result.collider != null) {
@@ -184,8 +172,8 @@ public class UnitBase : MonoBehaviour {
 				Vector3 bodyPos = nextBodyPos;
 
 				if(Mathf.Abs(result.normal.x) > Mathf.Abs(result.normal.y))
-					nextBodyPos.x = result.point.x + (result.normal.x > 0 ? 1:-1) * (bodySize.x / 2 + 1);
-				else nextBodyPos.y = result.point.y + (result.normal.y > 0 ? 1:-1) * (bodySize.y / 2 + 1);
+					nextBodyPos.x = result.point.x + (result.normal.x > 0 ? 1:-1) * (bodySize.x / 2 + 2);
+				else nextBodyPos.y = result.point.y + (result.normal.y > 0 ? 1:-1) * (bodySize.y / 2 + 2);
 
 				Debug.DrawLine(bodyPos, nextBodyPos, Color.gray);
 				Debug.DrawLine(prevRootPos, result.point, Color.cyan);
@@ -203,9 +191,7 @@ public class UnitBase : MonoBehaviour {
 
 
 	public Vector3 GetBodyOffset() {
-		if(objBase != null && objBase.Box2D != null)
-			return transform.rotation * objBase.Box2D.center;
-		return Vector3.zero;
+		return transform.rotation * box2D.center;
 	}
 
 	public Vector3 GetBodyPos() {
@@ -223,12 +209,10 @@ public class UnitBase : MonoBehaviour {
 
 	void OnDrawGizmos() {
 
-		if(objBase != null && objBase.Box2D != null) {
-			Vector3 pos = GetBodyPos();
-			pos.x += speed.x;
-			pos.y += speed.y;
-			Gizmos.color = new Color(1,1,1,0.5f);
-			Gizmos.DrawWireCube(pos, new Vector3(bodySize * 0.5f, bodySize, 0));
-		}
+		Vector3 pos = GetBodyPos();
+		pos.x += speed.x;
+		pos.y += speed.y;
+		Gizmos.color = new Color(1,1,1,0.5f);
+		Gizmos.DrawWireCube(pos, new Vector3(box2D.size.x, box2D.size.y, 0));
 	}
 }

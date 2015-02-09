@@ -3,36 +3,42 @@ using System.Collections;
 
 public class ObjectBase : MonoBehaviour {
 
-	[SerializeField] GameObject uiPrefab;
-	[SerializeField] float rotateSpeed = 0;
-	protected GameObject uiObject;
-	public GameObject GetUIObject() {
+	[SerializeField] UIObject prefabUIObject;
+
+	protected UIObject uiObject;
+	public UIObject GetUIObject() {
 		return uiObject;
 	}
 
 	public void SetVisible(bool on) {
-		uiObject.SetActive(on);
+		uiObject.gameObject.SetActive(on);
 	}
 
-	BoxCollider2D box2D = null;
-	public BoxCollider2D Box2D { get{ return box2D; } }
+	public Type GetCollider2D<Type>() where Type : Collider2D {
+		return collider2D as Type;
+	}
+
+	public BoxCollider2D box2D { get{ return collider2D as BoxCollider2D; } }
 
 	void Start() {
-		box2D = GetComponent<BoxCollider2D>();
-		uiObject = Instantiate(uiPrefab) as GameObject;
+		uiObject = Instantiate(prefabUIObject) as UIObject;
 		uiObject.transform.parent = UIRoot2D.Get().mainPanel.transform;
 		uiObject.transform.localScale = Vector3.one;
+		Start_();
 	}
+
+	protected virtual void Start_() {}
 
 	void Update() {
-		transform.localEulerAngles =
-		transform.localEulerAngles + Vector3.forward * rotateSpeed * Time.deltaTime;
 		uiObject.transform.localPosition = transform.position;
 		uiObject.transform.localRotation = transform.rotation;
+		Update_();
 	}
 
+	protected virtual void Update_() {}
+
 	void OnDrawGizmos() {
-		box2D = GetComponent<BoxCollider2D>();
+		BoxCollider2D box2D = GetCollider2D<BoxCollider2D>();
 		if(box2D != null) {
 			Gizmos.color = Color.yellow;
 

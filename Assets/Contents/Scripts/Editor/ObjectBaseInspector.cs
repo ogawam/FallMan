@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
-
+#if false
 [CustomEditor(typeof(ObjectBase))]
 public class ObjectBaseInspector : Editor
 {
@@ -15,3 +15,4 @@ public class ObjectBaseInspector : Editor
 		}
 	}
 }
+#endif

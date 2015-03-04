@@ -4,8 +4,10 @@ using System.Collections;
 // 2Dスプライトのアニメーション管理
 public class UISpriteController : MonoBehaviour {
 
-	UISprite sprite;
+	UISprite uiSprite;
 	void Awake() {
-		sprite = GetComponent<UISprite>();
+		uiSprite = GetComponent<UISprite>();
 	}
+
+	public UISprite sprite { get { return uiSprite; } }
 }

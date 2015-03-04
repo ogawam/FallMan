@@ -19,7 +19,7 @@ public class GimmickFire : ObjectBase {
 	}
 
 	void OnTriggerEnter2D(Collider2D hit2D) {
-		Debug.Log("hit");
+		Debug.Log("hit fire");
 		UnitBase unitBase = hit2D.GetComponent<UnitBase>();
 		if(unitBase != null)
 			unitBase.Kill();

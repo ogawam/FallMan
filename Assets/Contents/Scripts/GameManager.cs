@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour {
 
+	public bool isTest = false;
+
 	enum State {
 		Title,
 		Main,
@@ -18,6 +20,8 @@ public class GameManager : MonoBehaviour {
 	[SerializeField] Camera camera2D;
 	[SerializeField] UnitBase playerUnit;
 	[SerializeField] UIPanel mainPanel;
+	[SerializeField] UIFaderController fader;
+	[SerializeField] PanelIndicator indicator;
 
 	[SerializeField] ObjectBase objGuide;
 	[SerializeField] float scrollSpeed;
@@ -30,7 +34,13 @@ public class GameManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		playerUnit.transform.position = respawnPosition;
+		TransitStateTitle();
+		fader.FadeIn();
+
+		// 初期化
+		mainPanel.transform.localPosition = Vector3.zero;
+
+		Environment.Get().Pause();
 	}
 
 	StageManager currentStage {
@@ -45,12 +55,15 @@ public class GameManager : MonoBehaviour {
 		get { return currentArea.transform.position.y; }
 	}
 
+#if !UNITY_EDITOR
 	int latestFingerId = -1;
-	
+#endif
+
 	// Update is called once per frame
 	void Update () {
 		switch(state) {
 		case State.Title:
+			UpdateStateTitle();
 			break;
 		case State.Main:
 			UpdateStateMain();
@@ -68,14 +81,28 @@ public class GameManager : MonoBehaviour {
 	}
 
 	void TransitStateTitle() {
+		UIRoot2D.Get().indicator.DispTitle();
 		stateElapsedSec = 0;
+		state = State.Title;
 	}
 
 	void UpdateStateTitle() {
-
+		if(indicator.IsTouchedButton(Common.Button.Start)) {
+			indicator.HideTitle();
+			StartCoroutine(TransitStateMain());
+		}
 	}
 
-	void TransitStateMain() {
+	IEnumerator TransitStateMain() {
+
+		Vector3 pos = mainPanel.transform.localPosition;
+
+		pos.y = -currentAreaHeight;
+		mainPanel.transform.localPosition = pos;
+		yield return StartCoroutine(fader.CoFadeIn());
+
+		Environment.Get().Resume();
+
 		stateElapsedSec = 0;
 		state = State.Main;
 	}
@@ -133,10 +160,10 @@ public class GameManager : MonoBehaviour {
 			if(touchPosX < 0)
 				playerUnit.InputMoveLeft();
 			else playerUnit.InputMoveRight();
-			objGuide.SetVisible(false);
+//			objGuide.SetVisible(false);
 		}
 		else {
-			objGuide.SetVisible(false);
+//			objGuide.SetVisible(false);
 		}
 	}
 
@@ -222,55 +249,57 @@ public class GameManager : MonoBehaviour {
 	int debugStageNo = 0;
 	int debugAreaNo = 0;
 	void OnGUI() {
-		GUILayout.BeginHorizontal();
+		if(isTest) {
+			GUILayout.BeginHorizontal();
 
-			if(GUILayout.Button("ダメージ")) {
-				KillPlayer();
-			}
-			if(GUILayout.Button("やり直し")) {
-				life = 3;
-				currentStageNo = 0;
-				currentAreaNo = 0;
-				playerUnit.transform.position = respawnPosition;				
-			}
+				if(GUILayout.Button("ダメージ")) {
+					KillPlayer();
+				}
+				if(GUILayout.Button("やり直し")) {
+					life = 3;
+					currentStageNo = 0;
+					currentAreaNo = 0;
+					playerUnit.transform.position = respawnPosition;				
+				}
 
-		GUILayout.EndHorizontal();
+			GUILayout.EndHorizontal();
 
-		GUILayout.BeginHorizontal();
+			GUILayout.BeginHorizontal();
 
-			for(int i = 0; i < stages.Length; ++i) {
-				GUI.color = i != debugAreaNo ? Color.white : Color.yellow;
-				if(GUILayout.Button(stages[i].name))
-					debugStageNo = i;
-			}
+				for(int i = 0; i < stages.Length; ++i) {
+					GUI.color = i != debugStageNo ? Color.white : Color.yellow;
+					if(GUILayout.Button(stages[i].name))
+						debugStageNo = i;
+				}
 
-		GUILayout.EndHorizontal();
+			GUILayout.EndHorizontal();
 
-		GUILayout.BeginHorizontal();
+			GUILayout.BeginHorizontal();
 
-			StageManager debugStage = stages[debugStageNo];
-			for(int i = 0; i < debugStage.areaCount; ++i) {
-				GUI.color = i != debugAreaNo ? Color.white : Color.yellow;
-				if(GUILayout.Button(debugStage[i].name))
-					debugAreaNo = i;
-			}
+				StageManager debugStage = stages[debugStageNo];
+				for(int i = 0; i < debugStage.areaCount; ++i) {
+					GUI.color = i != debugAreaNo ? Color.white : Color.yellow;
+					if(GUILayout.Button(debugStage[i].name))
+						debugAreaNo = i;
+				}
 
-		GUILayout.EndHorizontal();
+			GUILayout.EndHorizontal();
 
-		GUILayout.BeginHorizontal();
+			GUILayout.BeginHorizontal();
 
-			if(GUILayout.Button("ステージを移動する")) {
-				currentStageNo = debugStageNo;
-				currentAreaNo = debugAreaNo;
-				playerUnit.transform.position = respawnPosition;				
-			}
+				if(GUILayout.Button("ステージを移動する")) {
+					currentStageNo = debugStageNo;
+					currentAreaNo = debugAreaNo;
+					playerUnit.transform.position = respawnPosition;				
+				}
 
-		GUILayout.EndHorizontal();
+			GUILayout.EndHorizontal();
 
-		GUILayout.BeginVertical("", "box");
-			GUILayout.Label("fps "+ 1f / Time.deltaTime);
-			GUILayout.Label("life "+ life);
-		GUILayout.EndVertical();
+			GUILayout.BeginVertical("", "box");
+				GUILayout.Label("fps "+ 1f / Time.deltaTime);
+				GUILayout.Label("life "+ life);
+			GUILayout.EndVertical();
+		}
 	}
 
 	void OnDrawGizmos() {

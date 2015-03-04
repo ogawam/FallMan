@@ -112,7 +112,7 @@ public class UnitBase : ObjectBase {
 				offset.x = 0;
 				offset = transform.rotation * offset;
 				nextVec -= offset;
-				Debug.Log("offset "+ offset);
+//				Debug.Log("offset "+ offset);
 			}
 
 			CollideOnMove(CalcCollidedPosition(prevPos, nextVec, 3));
@@ -171,7 +171,9 @@ public class UnitBase : ObjectBase {
 
 		for(int i = 0; i < repeat; ++i) {
 			RaycastHit2D result = Physics2D.BoxCast(
-				prevBodyPos, bodySize, transform.localEulerAngles.z, nextVec, nextVec.magnitude + 2, 
+				prevBodyPos, bodySize, 
+				transform.localEulerAngles.z, 
+				nextVec, nextVec.magnitude + 2, 
 				1 << LayerMask.NameToLayer("Default")
 			);
 			if(result.collider != null) {

@@ -20,4 +20,9 @@ public class Common {
 			degree -= 360;
 		return degree;
 	} 
+
+	public enum Button {
+		None,
+		Start,
+	}
 }

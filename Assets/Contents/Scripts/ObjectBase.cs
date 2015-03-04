@@ -10,6 +10,10 @@ public class ObjectBase : MonoBehaviour {
 		return uiObject;
 	}
 
+	public Type GetUIObject<Type>() where Type : UIObject {
+		return uiObject as Type;
+	}
+
 	public void SetVisible(bool on) {
 		uiObject.gameObject.SetActive(on);
 	}
@@ -23,7 +27,9 @@ public class ObjectBase : MonoBehaviour {
 	void Start() {
 		if(prefabUIObject != null) {
 			uiObject = Instantiate(prefabUIObject) as UIObject;
-			uiObject.transform.parent = UIRoot2D.Get().mainPanel.transform;
+			uiObject.transform.parent = UIRoot2D.Get().main.transform;
+	 		uiObject.transform.localPosition = transform.position;
+			uiObject.transform.localRotation = transform.rotation;
 			uiObject.transform.localScale = Vector3.one;
 		}
 		Start_();
@@ -89,7 +95,7 @@ public class ObjectBase : MonoBehaviour {
 		}
 	}
 
-	public int gridSize = 8;
+	public int gridSize = 32;
 	public void ArrangeOnGrid() {
 		Vector3 pos = transform.localPosition;
 

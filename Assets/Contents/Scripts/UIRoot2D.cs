@@ -3,13 +3,13 @@ using System.Collections;
 
 public class UIRoot2D : Singleton<UIRoot2D> {
 
-	[SerializeField] UIPanel panelMain;
-	public UIPanel main {
-		get{ return main; }
+	[SerializeField] UIPanel panelGame;
+	public UIPanel game {
+		get{ return panelGame; }
 	}
 
 	[SerializeField] PanelIndicator panelIndicator;
 	public PanelIndicator indicator {
-		get{ return indicator; }
+		get{ return panelIndicator; }
 	}
 }

@@ -19,15 +19,15 @@ public class ObjectBase : MonoBehaviour {
 	}
 
 	public Type GetCollider2D<Type>() where Type : Collider2D {
-		return collider2D as Type;
+		return GetComponent<Collider2D>() as Type;
 	}
 
-	public BoxCollider2D box2D { get{ return collider2D as BoxCollider2D; } }
+	public BoxCollider2D box2D { get{ return GetComponent<Collider2D>() as BoxCollider2D; } }
 
 	void Start() {
 		if(prefabUIObject != null) {
 			uiObject = Instantiate(prefabUIObject) as UIObject;
-			uiObject.transform.parent = UIRoot2D.Get().main.transform;
+			uiObject.transform.parent = UIRoot2D.Get().game.transform;
 	 		uiObject.transform.localPosition = transform.position;
 			uiObject.transform.localRotation = transform.rotation;
 			uiObject.transform.localScale = Vector3.one;
@@ -72,7 +72,7 @@ public class ObjectBase : MonoBehaviour {
 	        	new Vector3(1f, 1.0f, 1.0f)
 	        );
 
-			Gizmos.DrawWireCube(box2D.center, box2D.size);
+			Gizmos.DrawWireCube(box2D.offset, box2D.size);
 
 			Gizmos.matrix = tempMat;
 			return;
@@ -88,7 +88,7 @@ public class ObjectBase : MonoBehaviour {
 	        	new Vector3(1f, 1.0f, 1.0f)
 	        );
 
-			Gizmos.DrawWireSphere(sphere2D.center, sphere2D.radius);
+			Gizmos.DrawWireSphere(sphere2D.offset, sphere2D.radius);
 
 			Gizmos.matrix = tempMat;
 			return;

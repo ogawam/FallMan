@@ -11,7 +11,7 @@ public class GimmickLaser : ObjectBase {
 		if(sec > delay) {
 			Vector2 size = box2D.size;
 			size.x += speed * Time.deltaTime;
-			box2D.center = new Vector2(size.x / 2, 0);
+			box2D.offset = new Vector2(size.x / 2, 0);
 			box2D.size = size;
 
 			GetUIObject<UILaser>().SetScale(size.x);

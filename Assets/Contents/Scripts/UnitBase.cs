@@ -165,7 +165,7 @@ public class UnitBase : ObjectBase {
 		ColliderResult colliderResult = new ColliderResult();
 		Debug.DrawRay(prevRootPos, nextVec, Color.yellow);
 
-		Vector3 bodySize = (collider2D as BoxCollider2D).size;
+		Vector3 bodySize = (GetComponent<Collider2D>() as BoxCollider2D).size;
 		Vector3 prevBodyPos = prevRootPos + GetBodyOffset();
 		Vector3 nextBodyPos = prevBodyPos + nextVec;
 
@@ -226,8 +226,8 @@ public class UnitBase : ObjectBase {
 	public void Kill() {
 		OnFlags(Flag.Dead);
 		SetVisible(false);
-		if(collider2D != null)
-			collider2D.enabled = false;
+		if(GetComponent<Collider2D>() != null)
+			GetComponent<Collider2D>().enabled = false;
 		explode = Instantiate(prefabExplode) as EffectExplode;
 		explode.transform.parent = transform.parent;
 		explode.transform.position = transform.position;
@@ -237,13 +237,13 @@ public class UnitBase : ObjectBase {
 	public void Respawn() {
 		explode.Shrink(transform.position);
 		OffFlags(Flag.Dead | Flag.Land);
-		if(collider2D != null)
-			collider2D.enabled = true;
+		if(GetComponent<Collider2D>() != null)
+			GetComponent<Collider2D>().enabled = true;
 		SetVisible(true);
 	}
 
 	public Vector3 GetBodyOffset() {
-		return transform.rotation * box2D.center;
+		return transform.rotation * box2D.offset;
 	}
 
 	public Vector3 GetBodyPos() {

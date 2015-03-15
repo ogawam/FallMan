@@ -6,16 +6,23 @@ public class GameManager : MonoBehaviour {
 
 	public bool isTest = false;
 
-	enum State {
+	enum Sequence {
 		Title,
 		Main,
 		Dead,
 		Fall,
 		Pause,		
 	}
+	Sequence sequence = Sequence.Title;
 
-	State state = State.Main;
-	float stateElapsedSec = 0;
+	enum State {
+		Start,
+		Update,
+		End,
+	}
+	State state = State.Start;
+
+	float seqElapsedSec = 0;
 
 	[SerializeField] Camera camera2D;
 	[SerializeField] UnitBase playerUnit;
@@ -33,14 +40,12 @@ public class GameManager : MonoBehaviour {
 	int life = 3;
 
 	// Use this for initialization
-	void Start () {
-		TransitStateTitle();
-		fader.FadeIn();
-
+	IEnumerator Start () {
 		// 初期化
 		mainPanel.transform.localPosition = Vector3.zero;
 
-		Environment.Get().Pause();
+		yield return StartCoroutine(StartSequenceTitle());
+		state = State.Update;
 	}
 
 	StageManager currentStage {
@@ -62,58 +67,69 @@ public class GameManager : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		switch(state) {
-		case State.Title:
-			UpdateStateTitle();
+		case State.Start:
+			// ステート開始処理
 			break;
-		case State.Main:
-			UpdateStateMain();
+
+		case State.Update:
+			SendMessage("UpdateSequence"+sequence);
+			seqElapsedSec += Time.deltaTime;
 			break;
-		case State.Dead:
-			UpdateStateDead();
-			break;
-		case State.Fall:
-			UpdateStateFall();
-			break;
-		case State.Pause:
+
+		case State.End:
+			// ステート終了処理
 			break;
 		}
-		stateElapsedSec += Time.deltaTime;
 	}
 
-	void TransitStateTitle() {
+	// シーケンスを遷移する
+	IEnumerator TransitSequence(Sequence nextSeq) {
+		state = State.End;
+		yield return StartCoroutine("EndSequence"+ sequence);
+
+		sequence = nextSeq;
+
+		state = State.Start;
+		yield return StartCoroutine("StartSequence"+ nextSeq);
+
+		state = State.Update;
+		seqElapsedSec = 0;
+	}
+
+	IEnumerator StartSequenceTitle() {
+		Environment.Get().Pause();
 		UIRoot2D.Get().indicator.DispTitle();
-		stateElapsedSec = 0;
-		state = State.Title;
+		yield return StartCoroutine(fader.CoFadeIn());
 	}
 
-	void UpdateStateTitle() {
+	void UpdateSequenceTitle() {
 		if(indicator.IsTouchedButton(Common.Button.Start)) {
 			indicator.HideTitle();
-			StartCoroutine(TransitStateMain());
+			StartCoroutine(TransitSequence(Sequence.Main));
 		}
 	}
 
-	IEnumerator TransitStateMain() {
+	IEnumerator EndSequenceTitle() {
+		yield return StartCoroutine(fader.CoFadeIn());
+	}
 
+	IEnumerator StartSequenceMain() {
 		Vector3 pos = mainPanel.transform.localPosition;
 
 		pos.y = -currentAreaHeight;
 		mainPanel.transform.localPosition = pos;
-		yield return StartCoroutine(fader.CoFadeIn());
 
 		Environment.Get().Resume();
-
-		stateElapsedSec = 0;
-		state = State.Main;
+		yield break;
 	}
 
-	void UpdateStateMain() {
+	void UpdateSequenceMain() {
 		if(playerUnit.IsFlagsOn(UnitBase.Flag.Dead)) {
-			TransitStateDead();
+			StartCoroutine(TransitSequence(Sequence.Dead));
 			return;
 		}
 		else if(playerUnit.transform.localPosition.y < currentAreaHeight - (Common.viewHeight / 2)) {
-			TransitStateFall();
+			StartCoroutine(TransitSequence(Sequence.Fall));			
 			return;
 		}
 
@@ -126,6 +142,13 @@ public class GameManager : MonoBehaviour {
 		if(Input.GetMouseButton(0)) {
 			touchPosX = Input.mousePosition.x;
 			isMove = true;
+		}
+
+		if(Input.GetKey(KeyCode.LeftArrow)) {
+			playerUnit.InputMoveLeft();
+		}
+		else if(Input.GetKey(KeyCode.RightArrow)) {
+			playerUnit.InputMoveRight();
 		}
 #else
 		if(Input.touchCount > 0) {
@@ -153,7 +176,6 @@ public class GameManager : MonoBehaviour {
 			}
 		}
 #endif
-
 		if(isMove) {
 			touchPosX = (touchPosX - Screen.width / 2) * Common.scrn2View;
 			objGuide.transform.position = new Vector3(touchPosX, -mainPanel.transform.localPosition.y, 0);
@@ -167,14 +189,17 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 
-	void TransitStateDead() {
-		life--;
-		stateElapsedSec = 0;
-		state = State.Dead;
+	IEnumerator EndSequenceMain() {
+		yield break;
 	}
 
-	void UpdateStateDead() {
-		if(stateElapsedSec > 2) {
+	IEnumerator StartSequenceDead() {
+		life--;
+		yield break;
+	}
+
+	void UpdateSequenceDead() {
+		if(seqElapsedSec > 2) {
 			if(life == 0) {
 				life = 3;
 				currentStageNo = 0;
@@ -182,25 +207,16 @@ public class GameManager : MonoBehaviour {
 			}
 	
 			playerUnit.transform.position = respawnPosition;
-
 			playerUnit.Respawn();
-			TransitStateMain();
+			StartCoroutine(TransitSequence(Sequence.Main));
 		}
 	}
 
-	public Vector3 respawnPosition { 
-		get { 
-			Vector3 result = Vector3.zero;
-			mainPanel.transform.localPosition = Vector3.down * currentAreaHeight;
-			GimmickRespawn respawn = currentArea.GetRespawn();
-			if(respawn != null)
-				result = respawn.transform.position;
-			else result = Vector3.up * currentAreaHeight;
-			return result;
-		} 
+	IEnumerator EndSequenceDead() {
+		yield break;
 	}
 
-	void TransitStateFall() {
+	IEnumerator StartSequenceFall() {
 
 		currentAreaNo++;
 		if(currentAreaNo >= currentStage.areaCount) {
@@ -213,31 +229,49 @@ public class GameManager : MonoBehaviour {
 		}
 
 		Environment.Get().Pause();
-		stateElapsedSec = 0;
-		state = State.Fall;
+		yield break;
 	}
 
-	void UpdateStateFall() {
+	void UpdateSequenceFall() {
 		Vector3 pos = mainPanel.transform.localPosition;
 		if(pos.y < -currentAreaHeight) {
+			Debug.Log("pos.y "+ pos.y+ " currentAreaHeight "+ currentAreaHeight);
 			pos.y += scrollSpeed * Time.deltaTime;
 		}
 		else {
 			pos.y = -currentAreaHeight;
 			Environment.Get().Resume();
-			TransitStateMain();
+			StartCoroutine(TransitSequence(Sequence.Main));
 		}
 		mainPanel.transform.localPosition = pos;
 	}
 
-	void TransitStatePause() {
-		
-		stateElapsedSec = 0;
-		state = State.Pause;
+	IEnumerator EndSequenceFall() {
+		yield break;
 	}
 
-	void UpdateStatePause() {
+	IEnumerator StartSequencePause() {
+		yield break;
+	}
 
+	void UpdateSequencePause() {
+
+	}
+
+	IEnumerator EndSequencePause() {
+		yield break;
+	}
+
+	public Vector3 respawnPosition { 
+		get { 
+			Vector3 result = Vector3.zero;
+			mainPanel.transform.localPosition = Vector3.down * currentAreaHeight;
+			GimmickRespawn respawn = currentArea.GetRespawn();
+			if(respawn != null)
+				result = respawn.transform.position;
+			else result = Vector3.up * currentAreaHeight;
+			return result;
+		} 
 	}
 
 	void KillPlayer() {
@@ -296,7 +330,10 @@ public class GameManager : MonoBehaviour {
 			GUILayout.EndHorizontal();
 
 			GUILayout.BeginVertical("", "box");
+
 				GUILayout.Label("fps "+ 1f / Time.deltaTime);
+				GUILayout.Label("sequence "+ sequence);
+				GUILayout.Label("state "+ state);
 				GUILayout.Label("life "+ life);
 			GUILayout.EndVertical();
 		}

@@ -57,19 +57,33 @@ public class UnitBase : ObjectBase {
 		OnFlags(Flag.Move);
 	}
 
-	public void InputJump() {
+	public void InputJump(float rate = 1) {
 		if(IsFlagsOn(Flag.Land)) {
-			Vector3 move = transform.rotation * (Vector3.up * speed_jump);
+			Vector3 move = transform.rotation * (Vector3.up * speed_jump * rate);
 			speed.x += move.x;
 			speed.y += move.y;
 			OffFlags(Flag.Land);
 		}
 	}
 
+	public void InputDown() {
+		Quaternion inverse = Quaternion.Inverse(transform.rotation);
+		Vector3 localSpeed = inverse * speed;
+		localSpeed.y = Mathf.Min(localSpeed.y, 0);
+		speed = transform.rotation * localSpeed;		
+	}
+
 	// Update is called once per frame
 	protected override void Update_ () {
 		if(IsFlagsOn(Flag.Dead))
 			return;
+
+		foreach(Collider2D landCollider in landColliders) {
+			GimmickJump gmkJump = landCollider.GetComponent<GimmickJump>();
+			if(gmkJump != null && gmkJump.IsOpen()) {
+				InputJump(1.5f);
+			}
+		}
 
 		Quaternion inverse = Quaternion.Inverse(transform.rotation);
 		{
@@ -204,7 +218,11 @@ public class UnitBase : ObjectBase {
 		return colliderResult;
 	}
 
+	List<Collider2D> landColliders = new List<Collider2D>();
+
 	void CollideOnMove(ColliderResult result) {
+		landColliders.Clear();
+
 		transform.position = result.pos;
 		Quaternion inverse = Quaternion.Inverse(transform.rotation);
 		Vector3 localSpeed = inverse * speed;
@@ -214,6 +232,8 @@ public class UnitBase : ObjectBase {
 				standAxis = new Vector2(hit.normal.x, hit.normal.y);
 				OnFlags(Flag.Land);
 				localSpeed.y = 0;
+
+				landColliders.Add(hit.collider);
 			}
 			else if(localNormal.y < -0.5f) {
 				localSpeed.y = Mathf.Min(localSpeed.y, 0);

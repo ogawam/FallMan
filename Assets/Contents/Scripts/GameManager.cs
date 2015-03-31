@@ -39,13 +39,25 @@ public class GameManager : MonoBehaviour {
 	int currentAreaNo = 0;
 	int life = 3;
 
+	UITexture texLightMulti = null;
+	UITexture texLightAdd = null;
+
+	UIRoot2D root2D = null;
+	PanelGame panelGame = null;
+
 	// Use this for initialization
 	IEnumerator Start () {
+		root2D = UIRoot2D.Get();
+		panelGame = root2D.game;
+
 		// 初期化
 		mainPanel.transform.localPosition = Vector3.zero;
 
 		yield return StartCoroutine(StartSequenceTitle());
 		state = State.Update;
+
+		texLightMulti = panelGame.GetLightMulti();
+		texLightAdd = panelGame.GetLightAdd();
 	}
 
 	StageManager currentStage {
@@ -98,12 +110,12 @@ public class GameManager : MonoBehaviour {
 
 	IEnumerator StartSequenceTitle() {
 		Environment.Get().Pause();
-		UIRoot2D.Get().indicator.DispTitle();
+		root2D.indicator.DispTitle();
 		yield return StartCoroutine(fader.CoFadeIn());
 	}
 
 	void UpdateSequenceTitle() {
-		if(indicator.IsTouchedButton(Common.Button.Start)) {
+		if(root2D.GetButtonController(Common.Button.Start).IsPress()) {
 			indicator.HideTitle();
 			StartCoroutine(TransitSequence(Sequence.Main));
 		}
@@ -119,6 +131,7 @@ public class GameManager : MonoBehaviour {
 		pos.y = -currentAreaHeight;
 		mainPanel.transform.localPosition = pos;
 
+		currentArea.Pause(false);
 		Environment.Get().Resume();
 		yield break;
 	}
@@ -133,60 +146,29 @@ public class GameManager : MonoBehaviour {
 			return;
 		}
 
-		bool isMove = false;
-		float touchPosX = 0;
+		texLightMulti.transform.localPosition = 
+		texLightAdd.transform.localPosition = playerUnit.GetUIObject().transform.localPosition;
+
 #if UNITY_EDITOR
 		if(Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButton(1))
 			playerUnit.InputJump();
 
-		if(Input.GetMouseButton(0)) {
-			touchPosX = Input.mousePosition.x;
-			isMove = true;
-		}
-
-		if(Input.GetKey(KeyCode.LeftArrow)) {
+		if(Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) {
 			playerUnit.InputMoveLeft();
 		}
-		else if(Input.GetKey(KeyCode.RightArrow)) {
+		else if(Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) {
 			playerUnit.InputMoveRight();
 		}
-#else
-		if(Input.touchCount > 0) {
-			foreach(Touch touch in Input.touches) {
-				switch(touch.phase) {
-				case TouchPhase.Began:
-					latestFingerId = touch.fingerId;
-					break;
-				case TouchPhase.Ended:
-				case TouchPhase.Canceled:
-					if(latestFingerId == touch.fingerId)
-						latestFingerId = -1;
-					break;
-				default:
-					if(latestFingerId < 0)
-						latestFingerId = touch.fingerId;
-					break;
-				}
-
-				if(latestFingerId == touch.fingerId) {
-					latestFingerId = touch.fingerId;
-					touchPosX = touch.position.x;
-					isMove = true;
-				}
-			}
-		}
 #endif
-		if(isMove) {
-			touchPosX = (touchPosX - Screen.width / 2) * Common.scrn2View;
-			objGuide.transform.position = new Vector3(touchPosX, -mainPanel.transform.localPosition.y, 0);
-			if(touchPosX < 0)
-				playerUnit.InputMoveLeft();
-			else playerUnit.InputMoveRight();
-//			objGuide.SetVisible(false);
-		}
-		else {
-//			objGuide.SetVisible(false);
-		}
+	
+		if(root2D.GetButtonController(Common.Button.MoveLeft).IsHolding())
+			playerUnit.InputMoveLeft();
+		else if(root2D.GetButtonController(Common.Button.MoveRight).IsHolding())
+			playerUnit.InputMoveRight();
+		if(root2D.GetButtonController(Common.Button.Jump).IsPress())
+			playerUnit.InputJump();
+		if(root2D.GetButtonController(Common.Button.Jump).IsRelease())
+			playerUnit.InputDown();
 	}
 
 	IEnumerator EndSequenceMain() {
@@ -217,6 +199,7 @@ public class GameManager : MonoBehaviour {
 	}
 
 	IEnumerator StartSequenceFall() {
+		currentArea.Pause(true);
 
 		currentAreaNo++;
 		if(currentAreaNo >= currentStage.areaCount) {
@@ -247,6 +230,7 @@ public class GameManager : MonoBehaviour {
 	}
 
 	IEnumerator EndSequenceFall() {
+		currentArea.Begin();
 		yield break;
 	}
 

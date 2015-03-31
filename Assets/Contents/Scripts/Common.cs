@@ -5,6 +5,9 @@ public class Common {
 
 	static public float viewWidth = 640f;
 	static public float viewHeight = 1136f;
+	static public float vanishRange = 128f;
+	static public float vanishWidth = viewWidth * 0.5f + vanishRange;
+	static public float vanishHeight = viewHeight * 0.5f + vanishRange;
 	static public float scrn2View { get { return viewHeight / Screen.height; } }
 
 	static public float r2d = (180f / Mathf.PI);
@@ -18,11 +21,25 @@ public class Common {
 		degree = ClipDeg(degree);
 		if(degree > 180)
 			degree -= 360;
-		return degree;
+		return degree;	
 	} 
 
 	public enum Button {
 		None,
 		Start,
+		MoveLeft,
+		MoveRight,
+		Jump,
+
+		Gimmick = 1000,
+		GimmickHighJump,
+		GimmickSaw,
 	}
+
+	public enum ButtonState {
+		OnFree,
+		OnPress,
+		OnHolding,
+		OnRelease,
+	};
 }

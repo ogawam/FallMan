@@ -3,6 +3,21 @@ using System.Collections;
 
 public class ObjectBase : MonoBehaviour {
 
+	bool isPause = false;
+	public virtual void Pause(bool pause) {
+		Rigidbody2D rigidbody2D = GetComponent<Rigidbody2D>();
+		if(rigidbody2D != null)
+ 			rigidbody2D.isKinematic = pause;
+		isPause = pause;
+	}
+
+	public void Vanish() {
+		Rigidbody2D rigidbody2D = GetComponent<Rigidbody2D>();
+		rigidbody2D.isKinematic = false;
+		gameObject.SetActive(false);
+		SetVisible(false);
+	}
+
 	[SerializeField] UIObject prefabUIObject;
 
 	protected UIObject uiObject = null;
@@ -22,7 +37,20 @@ public class ObjectBase : MonoBehaviour {
 		return GetComponent<Collider2D>() as Type;
 	}
 
-	public BoxCollider2D box2D { get{ return GetComponent<Collider2D>() as BoxCollider2D; } }
+	public BoxCollider2D box2D { get{ return GetComponent<BoxCollider2D>(); } }
+	public CircleCollider2D circle2D { get{ return GetComponent<CircleCollider2D>(); } }
+
+	protected Vector3 firstPosition;
+	protected Quaternion firstRotation;
+	public virtual void Reset() {
+		transform.position = firstPosition;
+		transform.rotation = firstRotation;
+	}
+
+	void Awake() {
+		firstPosition = transform.position;
+		firstRotation = transform.rotation;
+	}
 
 	void Start() {
 		if(prefabUIObject != null) {
@@ -38,7 +66,7 @@ public class ObjectBase : MonoBehaviour {
 	protected virtual void Start_() {}
 
 	void Update() {
-		if(Environment.Get().isPause)
+		if(Environment.Get().isPause || isPause)
 			return;
 
 		if(uiObject) {
@@ -62,7 +90,6 @@ public class ObjectBase : MonoBehaviour {
 	void OnDrawGizmos() {
 		OnDrawGizmos_();
 
-		BoxCollider2D box2D = GetCollider2D<BoxCollider2D>();
 		if(box2D != null) {
 
 			Matrix4x4 tempMat = Gizmos.matrix;
@@ -78,8 +105,7 @@ public class ObjectBase : MonoBehaviour {
 			return;
 		}
 
-		CircleCollider2D sphere2D = GetCollider2D<CircleCollider2D>();
-		if(sphere2D != null) {
+		if(circle2D != null) {
 
 			Matrix4x4 tempMat = Gizmos.matrix;
 	        Gizmos.matrix = Matrix4x4.TRS(
@@ -88,14 +114,18 @@ public class ObjectBase : MonoBehaviour {
 	        	new Vector3(1f, 1.0f, 1.0f)
 	        );
 
-			Gizmos.DrawWireSphere(sphere2D.offset, sphere2D.radius);
+			Gizmos.DrawWireSphere(circle2D.offset, circle2D.radius);
 
 			Gizmos.matrix = tempMat;
 			return;
 		}
+
+		if(uiObject != null) {
+			
+		}
 	}
 
-	public int gridSize = 32;
+	public int gridSize = 8;
 	public void ArrangeOnGrid() {
 		Vector3 pos = transform.localPosition;
 

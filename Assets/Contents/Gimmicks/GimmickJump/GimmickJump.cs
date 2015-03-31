@@ -5,17 +5,21 @@ using System.Linq;
 
 public class GimmickJump : ObjectBase {
 
+	UIButtonController buttonController;
+	protected override void Start_ () {
+		buttonController = uiObject.GetComponent<UIButtonController>();
+	}
+
 	// Update is called once per frame
 	protected override void Update_ () {
+		isOpen = false;
+		if(buttonController.IsPress())
+			isOpen = true;
 	}
 
-	void OnTriggerEnter2D(Collider2D hit2D) {
-		UnitBase unitBase = hit2D.GetComponent<UnitBase>();
-		if(unitBase != null)
-			unitBase.InputJump();
-	}
-
-	void OnTriggerStay2D(Collider2D hit2D) {
+	bool isOpen = false;
+	public bool IsOpen() {
+		return isOpen;
 	}
 
 	void OnGUI() {

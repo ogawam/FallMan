@@ -5,11 +5,6 @@ using System.Linq;
 
 public class GimmickJump : ObjectBase {
 
-	UIButtonController buttonController;
-	protected override void Start_ () {
-		buttonController = uiObject.GetComponent<UIButtonController>();
-	}
-
 	// Update is called once per frame
 	protected override void Update_ () {
 		isOpen = false;

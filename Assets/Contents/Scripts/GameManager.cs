@@ -264,62 +264,72 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 
+	bool debugDisp = false;
 	int debugStageNo = 0;
 	int debugAreaNo = 0;
 	void OnGUI() {
 		if(isTest) {
+			GUILayoutOption guiHeight = GUILayout.Height(80 / Common.scrn2View);
 			GUILayout.BeginHorizontal();
+				debugDisp ^= GUILayout.Button("デバッグ", guiHeight);
+				if(debugDisp) {
 
-				if(GUILayout.Button("ダメージ")) {
-					KillPlayer();
-				}
-				if(GUILayout.Button("やり直し")) {
-					life = 3;
-					currentStageNo = 0;
-					currentAreaNo = 0;
-					playerUnit.transform.position = respawnPosition;				
+					if(GUILayout.Button("ダメージ", guiHeight)) {
+						KillPlayer();
+					}
+					if(GUILayout.Button("やり直し", guiHeight)) {
+						life = 3;
+						currentStageNo = 0;
+						currentAreaNo = 0;
+						playerUnit.transform.position = respawnPosition;				
+					}
 				}
 
 			GUILayout.EndHorizontal();
 
-			GUILayout.BeginHorizontal();
+			if(debugDisp) {
 
-				for(int i = 0; i < stages.Length; ++i) {
-					GUI.color = i != debugStageNo ? Color.white : Color.yellow;
-					if(GUILayout.Button(stages[i].name))
-						debugStageNo = i;
-				}
+				GUILayout.BeginHorizontal();
 
-			GUILayout.EndHorizontal();
+					for(int i = 0; i < stages.Length; ++i) {
+						GUI.color = i != debugStageNo ? Color.white : Color.yellow;
+						if(GUILayout.Button(stages[i].name, guiHeight))
+							debugStageNo = i;
+					}
 
-			GUILayout.BeginHorizontal();
+				GUILayout.EndHorizontal();
 
-				StageManager debugStage = stages[debugStageNo];
-				for(int i = 0; i < debugStage.areaCount; ++i) {
-					GUI.color = i != debugAreaNo ? Color.white : Color.yellow;
-					if(GUILayout.Button(debugStage[i].name))
-						debugAreaNo = i;
-				}
+				GUILayout.BeginHorizontal();
 
-			GUILayout.EndHorizontal();
+					StageManager debugStage = stages[debugStageNo];
+					for(int i = 0; i < debugStage.areaCount; ++i) {
+						GUI.color = i != debugAreaNo ? Color.white : Color.yellow;
+						if(GUILayout.Button(debugStage[i].name, guiHeight))
+							debugAreaNo = i;
+					}
 
-			GUILayout.BeginHorizontal();
+				GUILayout.EndHorizontal();
 
-				if(GUILayout.Button("ステージを移動する")) {
-					currentStageNo = debugStageNo;
-					currentAreaNo = debugAreaNo;
-					playerUnit.transform.position = respawnPosition;				
-				}
+				GUILayout.BeginHorizontal();
 
-			GUILayout.EndHorizontal();
+					if(GUILayout.Button("ステージを移動する", guiHeight)) {
+						currentArea.Pause(true);
+						currentStageNo = debugStageNo;
+						currentAreaNo = debugAreaNo;
+						playerUnit.transform.position = respawnPosition;				
+						currentArea.Pause(false);
+					}
 
-			GUILayout.BeginVertical("", "box");
+				GUILayout.EndHorizontal();
 
-				GUILayout.Label("fps "+ 1f / Time.deltaTime);
-				GUILayout.Label("sequence "+ sequence);
-				GUILayout.Label("state "+ state);
-				GUILayout.Label("life "+ life);
-			GUILayout.EndVertical();
+				GUILayout.BeginVertical("", "box");
+
+					GUILayout.Label("fps "+ 1f / Time.deltaTime);
+					GUILayout.Label("sequence "+ sequence);
+					GUILayout.Label("state "+ state);
+					GUILayout.Label("life "+ life);
+				GUILayout.EndVertical();
+			}
 		}
 	}
 

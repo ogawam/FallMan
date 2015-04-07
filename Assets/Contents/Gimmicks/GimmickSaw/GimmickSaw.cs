@@ -14,9 +14,7 @@ public class GimmickSaw: ObjectBase {
 	float stopCount = 0;
 
 	Vector3 posFirst = Vector3.zero;
-	UIButtonController buttonController;
 	protected override void Start_ () {
-		buttonController = uiObject.GetComponent<UIButtonController>();
 		posFirst = transform.position;
 	}
 

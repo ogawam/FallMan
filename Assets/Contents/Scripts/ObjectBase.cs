@@ -25,12 +25,14 @@ public class ObjectBase : MonoBehaviour {
 		return uiObject;
 	}
 
+	protected UIButtonController buttonController = null;
+
 	public Type GetUIObject<Type>() where Type : UIObject {
 		return uiObject as Type;
 	}
 
-	public void SetVisible(bool on) {
-		uiObject.gameObject.SetActive(on);
+	public void SetVisible(bool visible) {
+		uiObject.SetVisible(visible);
 	}
 
 	public Type GetCollider2D<Type>() where Type : Collider2D {
@@ -59,6 +61,7 @@ public class ObjectBase : MonoBehaviour {
 	 		uiObject.transform.localPosition = transform.position;
 			uiObject.transform.localRotation = transform.rotation;
 			uiObject.transform.localScale = Vector3.one;
+			buttonController = uiObject.GetComponent<UIButtonController>();
 		}
 		Start_();
 	}
@@ -122,6 +125,14 @@ public class ObjectBase : MonoBehaviour {
 
 		if(uiObject != null) {
 			
+		}
+	}
+
+	protected bool inVanishRange {	get {
+			return transform.localPosition.x < -Common.vanishWidth
+				|| transform.localPosition.x >  Common.vanishWidth
+				|| transform.localPosition.y < -Common.vanishHeight
+				|| transform.localPosition.y >  Common.vanishHeight;
 		}
 	}
 
